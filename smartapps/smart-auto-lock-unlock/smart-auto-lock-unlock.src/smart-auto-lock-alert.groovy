@@ -31,20 +31,22 @@ preferences
     	input "contact1", "capability.contactSensor", required: true
     }
     section("Automatically lock the door when closed...") {
-        input "minutesLater", "number", title: "Delay (in minutes):", required: true
+	    input "autoLock", "enum", title: "Enable auto-lock?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
+            input "minutesLater", "number", title: "Delay (in minutes):", required: true, defaultValue: 15
     }
 //   DISABLED - THIS IS A SECURITY VULNERABILITY IF THE SENSOR EVER MALFUNCTIONS!
 //    section("Automatically unlock the door when open...") {
 //        input "secondsLater", "number", title: "Delay (in seconds):", required: true
 //    }
     section("Send an alert if the door is left open too long...") {
-        input "openMinutesLater", "number", title: "Delay (in minutes):", required: true
+    	input "sendOpenAlert", "enum", title: "Send left open alert?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
+        input "openMinutesLater", "number", title: "Delay (in minutes):", required: true, defaultValue: 15
     }
     section( "Push notification?" ) {
-		input "sendPushMessage", "enum", title: "Send push notification?", metadata:[values:["Yes", "No"]], required: false
+		input "sendPushMessage", "enum", title: "Send push notification?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
     }
     section( "Text message?" ) {
-    	input "sendText", "enum", title: "Send text message notification?", metadata:[values:["Yes", "No"]], required: false
+    	input "sendText", "enum", title: "Send text message notification?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "No"
        	input "phoneNumber", "phone", title: "Enter phone number:", required: false
     }
 }
@@ -70,6 +72,7 @@ def initialize()
     subscribe(contact1, "contact.closed", doorHandler)
 }
 
+//autoLock, sendOpenAlert (sendText)  FINISH IMPLEMENTING PREFERENCES / Enable / disable
 def lockDoor()
 {
 	if (lock1.latestValue("lock") == "unlocked")
