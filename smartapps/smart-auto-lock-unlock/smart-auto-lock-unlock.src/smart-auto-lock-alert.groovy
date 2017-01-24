@@ -80,15 +80,36 @@ def lockDoor()
     		log.debug "Locking $lock1..."
     		lock1.lock()
         	log.debug ("Sending Push Notification...") 
-    		if (sendPushMessage != "No") sendPush("$lock1 locked after $contact1 was closed for $minutesLater minute(s)!")
+    		if (sendPushMessage != "No") sendPush("Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
     		log.debug("Sending text message...")
-		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "$lock1 locked after $contact1 was closed for $minutesLater minute(s)!")
-        }
+		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
+		//Set a timer for 1 minute to verify that the door successfully relocked.
+	        def delay = (1 * 60)
+	        runIn (delay, checkLock)
+	
+	}
 	else if (lock1.latestValue("lock") == "locked")
     	{
         log.debug "$lock1 was already locked..."
         }
 }
+
+//Verify that attempt to lock the door was successfull - send an alert if it fails... IE: if lock lost power etc.
+def checkLock()
+{
+	//Door closed and unlocked, schedule delayed lock of door.
+	if (lock1.latestValue("lock") == "unlocked")
+    	{
+		//????? Add a second attempt to re-lock if the initial attempt fails?  Option to re-try every X minutes?
+    		if (sendPushMessage != "No") sendPush("Attempt at timed lock appears to have failed!!!")
+    		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "Attempt at timed lock appears to have failed!!!")
+	}
+	else if (lock1.latestValue("lock") == "locked")
+    	{
+    		if (sendPushMessage != "No") sendPush("Verified that timed lock attempt succeeded.")
+        }
+}
+
 
 def unlockDoor()
 {
