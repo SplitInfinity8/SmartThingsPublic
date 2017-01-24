@@ -1,7 +1,8 @@
-/**
- *  Smart Lock / Alert Left Open
+/***
+ *  Smart Lock and Smart Open Door Alerts
  *
- *  Copyright 2014 Arnaud
+ *  Copywright 2017 SplitInfinity8
+ *  Based on code originally Copyright 2014 Arnaud
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -11,12 +12,12 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- *
- */
+ ***/
+
 definition(
     name: "Smart Auto Lock - Alert Left Open",
     namespace: "smart-auto-lock-alert-open",
-    author: "Arnaud - modified by SplitInfinity8",
+    author: "SplitInfinity8 based on code from Arnaud",
     description: "Automatically lock door X minutes after being closed, and alert X minutes after being left open.",
     category: "Safety & Security",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
@@ -72,7 +73,7 @@ def initialize()
     subscribe(contact1, "contact.closed", doorHandler)
 }
 
-//autoLock, sendOpenAlert (sendText)  FINISH IMPLEMENTING PREFERENCES / Enable / disable
+//********* Preference: sendOpenAlert (sendText)  FINISH IMPLEMENTING PREFERENCES / Enable / disable
 def lockDoor()
 {
 	if (lock1.latestValue("lock") == "unlocked")
@@ -90,7 +91,7 @@ def lockDoor()
 	}
 	else if (lock1.latestValue("lock") == "locked")
     	{
-        log.debug "$lock1 was already locked..."
+      		log.debug "$lock1 was already locked..."
         }
 }
 
@@ -153,9 +154,12 @@ def doorHandler(evt)
     //if ((contact1.latestValue("contact") == "open") && (evt.value == "locked"))
     //else if ((contact1.latestValue("contact") == "open") && (evt.value == "unlocked"))
         unschedule (lockDoor)
-    	log.debug "Door left open, set timer to send a warning!"
-        def delay = (openMinutesLater * 60)
-        runIn (delay, alertOpenDoor)
+	if (sendOpenAlert != "No")
+	{
+	    	log.debug "Door left open, set timer to send a warning!"
+	        def delay = (openMinutesLater * 60)
+	        runIn (delay, alertOpenDoor)
+	}
     }
     else if ((contact1.latestValue("contact") == "closed") && (evt.value == "locked"))
     {
@@ -167,32 +171,43 @@ def doorHandler(evt)
     {
 	//Door closed and unlocked, schedule delayed lock of door.
 	unschedule (alertOpenDoor)
-        log.debug "Scheduling lock of $lock1..."
-        def delay = (minutesLater * 60)
-        runIn (delay, lockDoor)
+	if (autoLock != "No")
+	{
+        	log.debug "Scheduling lock of $lock1..."
+        	def delay = (minutesLater * 60)
+        	runIn (delay, lockDoor)
+    	}
     }
     else if ((lock1.latestValue("lock") == "unlocked") && (evt.value == "open"))
     {
         unschedule (lockDoor)
-    	log.debug "Door left open, set timer to send a warning!"
-        def delay = (openMinutesLater * 60)
-        runIn (delay, alertOpenDoor)
+	if (sendOpenAlert != "No")
+	{
+	    	log.debug "Door left open, set timer to send a warning!"
+		def delay = (openMinutesLater * 60)
+		runIn (delay, alertOpenDoor)
+	}
     }
     else if ((lock1.latestValue("lock") == "unlocked") && (evt.value == "closed"))
     {
-    	//lock1.unlock()
 	unschedule (alertOpenDoor)
-        log.debug "Scheduling lock of $lock1..."
-        def delay = (minutesLater * 60)
-        runIn (delay, lockDoor)
+	if (autoLock != "No")
+	{
+	        log.debug "Scheduling lock of $lock1..."
+	        def delay = (minutesLater * 60)
+	        runIn (delay, lockDoor)
+	}
     }
     else if ((lock1.latestValue("lock") == "locked") && (evt.value == "open"))
     {
         //lock1.unlock()
         unschedule (lockDoor)
-    	log.debug "Door left open and locked?, set timer to send a warning!"
-        def delay = (openMinutesLater * 60)
-        runIn (delay, alertOpenDoor)
+    	if (sendOpenAlert != "No")
+	{
+		log.debug "Door left open and locked?, set timer to send a warning!"
+        	def delay = (openMinutesLater * 60)
+        	runIn (delay, alertOpenDoor)
+	}
     }
     else if ((lock1.latestValue("lock") == "locked") && (evt.value == "closed"))
     {
