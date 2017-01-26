@@ -12,7 +12,29 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- ***/
+
+*** Workflow layout ***
+Auto-lock after __ minutes: Yes/No (Default 15, Yes)
+-(Alert on auto-lock attempt)
+-(Verify after 60 seconds, alert if failed - whether alerts are enabled or not.)
+
+If auto-lock fails retry at 1, 5, and 60 minutes: Yes/No (Default Yes)
+-(Alert if auto-lock retry is successful)
+
+Send auto-lock alerts: No, Push, Text, Push and text (Default Push)
+
+
+Send open door alerts after __ minutes: No, Push, Text, Push and Text (Default 15, Push)
+Send up to ___ additional alerts every __ minutes. (Default 4, 60)
+
+
+Phone Number For Text Alerts: ______________
+
+
+Security Warning: The following setting is of dubious value and could cause your door to unlock due to a sensor malfunction.
+It is left here for the rare use case scenario where someone might have a self closing door that ends up locked in the open position.
+Auto-Unlock when door is left open and locked?
+***/
 
 definition(
     name: "Smart Auto Lock - Alert Left Open",
@@ -71,6 +93,10 @@ def initialize()
     subscribe(lock1, "unlock", doorHandler, [filterEvents: false])  
     subscribe(contact1, "contact.open", doorHandler)
     subscribe(contact1, "contact.closed", doorHandler)
+    state.autoLockAttempt = 0
+    state.doorOpenAlert = 0
+    //state.autoLockAttempt = state.autotLockAttempt + 1
+    //log.debug "Stored state code example, counter incremented $state.autoLockAttempt times"
 }
 
 //********* Preference: sendOpenAlert (sendText)  FINISH IMPLEMENTING PREFERENCES / Enable / disable
