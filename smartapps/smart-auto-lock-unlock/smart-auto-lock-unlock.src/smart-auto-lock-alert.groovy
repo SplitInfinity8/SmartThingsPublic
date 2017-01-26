@@ -15,23 +15,22 @@
 
 *** Workflow layout ***
 Auto-lock after __ minutes: Yes/No (Default 15, Yes)
--(Alert on auto-lock attempt)
--(Verify after 60 seconds, alert if failed - whether alerts are enabled or not.)
-
+  -(Alert on auto-lock attempt)
+  -(Verify after 60 seconds, alert if failed - whether alerts are enabled or not.)
 If auto-lock fails retry at 1, 5, and 60 minutes: Yes/No (Default Yes)
--(Alert if auto-lock retry is successful)
-
+  -(Alert if auto-lock retry is successful)
 Send auto-lock alerts: No, Push, Text, Push and text (Default Push)
-
 
 Send open door alerts after __ minutes: No, Push, Text, Push and Text (Default 15, Push)
 Send up to ___ additional alerts every __ minutes. (Default 4, 60)
 
+Phone number required for optional text alerts: ______________
 
-Phone Number For Text Alerts: ______________
+[Add?] Only auto-lock when motion sensor is idle?
 
+[Add?] Auto-lock WITHOUT door sensor!?  Note, this would be a dumb timed auto-lock and could attempt to lock the door while it is open, etc. Use with caution.
 
-Security Warning: The following setting is of dubious value and could cause your door to unlock due to a sensor malfunction.
+[Add] Security Warning: The following setting is of dubious value and could cause your door to unlock due to a sensor malfunction.
 It is left here for the rare use case scenario where someone might have a self closing door that ends up locked in the open position.
 Auto-Unlock when door is left open and locked?
 ***/
