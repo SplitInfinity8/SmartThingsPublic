@@ -15,6 +15,8 @@
  *
  * Notes on state storage: http://docs.smartthings.com/en/latest/smartapp-developers-guide/state.html
  *
+
+
 *** Workflow layout ***
 Auto-lock after __ minutes: Yes/No (Default 15, Yes)
   -(Alert on auto-lock attempt)
@@ -29,6 +31,7 @@ Send up to ___ additional alerts every __ minutes. (Default 4, 60)
 Phone number required for optional text alerts: ______________
 
 [Add?] Only auto-lock when motion sensor is idle?
+[Add?] Only send left open alert when motion sensor is idle?
 
 [Add?] Auto-lock WITHOUT door sensor!?  Note, this would be a dumb timed auto-lock and could attempt to lock the door while it is open, etc. Use with caution.
 
@@ -39,9 +42,7 @@ Auto-Unlock when door is left open and locked?
 
 
 Schedule auto-retry attempt at locking door...
-Add Followup alert if left open...
 Add escalation option for door left open?  IE: Text after an hour if it's still open - vs push after 10 minutes...
-Set DEFAULT	values...
 ***/
 
 definition(
@@ -61,9 +62,14 @@ preferences
     section("Select the door contact sensor:") {
     	input "contact1", "capability.contactSensor", required: true
     }
+    section("Select the door area motion sensor:") {
+    	input "motion1", "capability.motionSensor", required: false
+    }
     section("Automatically lock the door when closed...") {
 	    input "autoLock", "enum", title: "Enable auto-lock?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "Yes"
             input "minutesLater", "number", title: "Delay (in minutes):", required: true, defaultValue: 15
+	    input "motionDelayLock", "enum", title: "(Not finished!) Only lock when motion sensor is idle?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "No"
+	    input "autoLockTimedOnly", "enum", title: " (Not finished!) Enable basic auto-lock? (Timed only, use caution, can't tell state of door!)", metadata:[values:["Yes", "No"]], required: true, defaultValue: "No"
     }
 //   DISABLED - THIS IS A SECURITY VULNERABILITY IF THE SENSOR EVER MALFUNCTIONS!
 //    section("Automatically unlock the door when open...") {
@@ -103,7 +109,7 @@ def initialize()
     subscribe(contact1, "contact.closed", doorHandler)
     state.autoLockAttempt = 0
     state.doorOpenAlert = 0
-    //state.autoLockAttempt = state.autotLockAttempt + 1
+    //state.autoLockAttempt = state.autotLockAttempt + 1   (state.doorOpenAlert)
     //log.debug "Stored state code example, counter incremented $state.autoLockAttempt times"
 }
 
@@ -114,6 +120,7 @@ def lockDoor()
     	{
     		log.debug "Locking $lock1..."
     		lock1.lock()
+		state.autoLockAttempt = state.autotLockAttempt + 1
         	log.debug ("If enabled, send push notification? $sendPushMessage, send text message? $sendText") 
     		if (sendPushMessage != "No") sendPush("Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
 		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
@@ -169,11 +176,9 @@ def alertOpenDoor()
     		log.debug "Sending alert, door left open!"
     		if (sendPushMessage != "No") sendPush("WARNING: $lock1 left open for $openMinutesLater minute(s)!")
     		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "WARNING: $lock1 left open for $openMinutesLater minute(s)!")
+		state.autoLockAttempt = state.doorOpenAlert + 1
         }
-	else if (contact1.latestValue("contact") == "closed")
-    	{
-        	log.debug "$lock1 door was already closed..."
-        }
+	else if (contact1.latestValue("contact") == "closed"){log.debug "$lock1 door was already closed..."}
 }
 
 def doorHandler(evt)
