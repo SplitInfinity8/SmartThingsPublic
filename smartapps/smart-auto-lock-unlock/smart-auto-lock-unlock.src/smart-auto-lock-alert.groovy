@@ -1,8 +1,8 @@
 /***
- *  Smart Lock and Smart Open Door Alerts
+ *  Smart Lock and Open Door Alerts
  *
  *  Copywright 2017 SplitInfinity8
- *  Based on code originally Copyright 2014 Arnaud
+ *  Based on code originally Copyright 2014 Arnaud (Re-written for improved functionality and to reduce security risk.)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -35,12 +35,19 @@ Phone number required for optional text alerts: ______________
 [Add] Security Warning: The following setting is of dubious value and could cause your door to unlock due to a sensor malfunction.
 It is left here for the rare use case scenario where someone might have a self closing door that ends up locked in the open position.
 Auto-Unlock when door is left open and locked?
+
+
+
+Schedule auto-retry attempt at locking door...
+Add Followup alert if left open...
+Add escalation option for door left open?  IE: Text after an hour if it's still open - vs push after 10 minutes...
+Set DEFAULT	values...
 ***/
 
 definition(
-    name: "Smart Auto Lock - Alert Left Open",
+    name: "Smart Lock and Open Door Alerts",
     namespace: "smart-auto-lock-alert-open",
-    author: "SplitInfinity8 based on code from Arnaud",
+    author: "SplitInfinity8",
     description: "Automatically lock door X minutes after being closed, and alert X minutes after being left open.",
     category: "Safety & Security",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
@@ -55,7 +62,7 @@ preferences
     	input "contact1", "capability.contactSensor", required: true
     }
     section("Automatically lock the door when closed...") {
-	    input "autoLock", "enum", title: "Enable auto-lock?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
+	    input "autoLock", "enum", title: "Enable auto-lock?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "Yes"
             input "minutesLater", "number", title: "Delay (in minutes):", required: true, defaultValue: 15
     }
 //   DISABLED - THIS IS A SECURITY VULNERABILITY IF THE SENSOR EVER MALFUNCTIONS!
@@ -63,14 +70,14 @@ preferences
 //        input "secondsLater", "number", title: "Delay (in seconds):", required: true
 //    }
     section("Send an alert if the door is left open too long...") {
-    	input "sendOpenAlert", "enum", title: "Send left open alert?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
+    	input "sendOpenAlert", "enum", title: "Send left open alert?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "Yes"
         input "openMinutesLater", "number", title: "Delay (in minutes):", required: true, defaultValue: 15
     }
     section( "Push notification?" ) {
-		input "sendPushMessage", "enum", title: "Send push notification?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "Yes"
+		input "sendPushMessage", "enum", title: "Send push notification?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "Yes"
     }
     section( "Text message?" ) {
-    	input "sendText", "enum", title: "Send text message notification?", metadata:[values:["Yes", "No"]], required: false, defaultValue: "No"
+    	input "sendText", "enum", title: "Send text message notification?", metadata:[values:["Yes", "No"]], required: true, defaultValue: "No"
        	input "phoneNumber", "phone", title: "Enter phone number:", required: false
     }
 }
@@ -107,19 +114,14 @@ def lockDoor()
     	{
     		log.debug "Locking $lock1..."
     		lock1.lock()
-        	log.debug ("Sending Push Notification...") 
+        	log.debug ("If enabled, send push notification? $sendPushMessage, send text message? $sendText") 
     		if (sendPushMessage != "No") sendPush("Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
-    		log.debug("Sending text message...")
 		if ((sendText == "Yes") && (phoneNumber != "0")) sendSms(phoneNumber, "Attempting to lock $lock1 after $contact1 was closed for $minutesLater minute(s)!")
 		//Set a timer for 1 minute to verify that the door successfully relocked.
 	        def delay = (1 * 60)
 	        runIn (delay, checkLock)
-	
 	}
-	else if (lock1.latestValue("lock") == "locked")
-    	{
-      		log.debug "$lock1 was already locked..."
-        }
+	else if (lock1.latestValue("lock") == "locked"){log.debug "$lock1 was already locked..."}
 }
 
 //Verify that attempt to lock the door was successfull - send an alert if it fails... IE: if lock lost power etc.
@@ -141,7 +143,7 @@ def checkLock()
 
 def unlockDoor()
 {
-	log.debug "Unlock disabled, doing nothing..."
+	log.debug "Unlock disabled, doing nothing... This is a security vulnerability if enabled, would unlock door any time a sensor malfunctions..."
 	/*
 	//Automated door unlock is a possible security issue if sensor ever malfunctions and usefulness is dubious, DISABLED!
 	if (lock1.latestValue("lock") == "locked")
@@ -176,76 +178,38 @@ def alertOpenDoor()
 
 def doorHandler(evt)
 {
-    if ((contact1.latestValue("contact") == "open"))
+    if ((contact1.latestValue("contact") == "open") || (lock1.latestValue("lock") == "locked") && (evt.value == "open") || (lock1.latestValue("lock") == "unlocked") && (evt.value == "open"))
     {
-    //if ((contact1.latestValue("contact") == "open") && (evt.value == "locked"))
-    //else if ((contact1.latestValue("contact") == "open") && (evt.value == "unlocked"))
-        unschedule (lockDoor)
+	unschedule (lockDoor)
+	unschedule (checkLock)
 	if (sendOpenAlert != "No")
 	{
-	    	log.debug "Door left open, set timer to send a warning!"
-	        def delay = (openMinutesLater * 60)
+		log.debug "$lock1 door left open, set timer to send a warning! Using open sensor $contact1."
+		def delay = (openMinutesLater * 60)
 	        runIn (delay, alertOpenDoor)
 	}
     }
-    else if ((contact1.latestValue("contact") == "closed") && (evt.value == "locked"))
+    else if ((contact1.latestValue("contact") == "closed") && (evt.value == "locked") || (lock1.latestValue("lock") == "locked") && (evt.value == "closed"))
     {
-	//Door already locked, unschedule pending lock.
+        log.debug "$lock1 closed and already locked, do nothing... Using open sensor $contact1."
 	unschedule (alertOpenDoor)
         unschedule (lockDoor)
-    }   
-    else if ((contact1.latestValue("contact") == "closed") && (evt.value == "unlocked"))
+    }
+    else if ((contact1.latestValue("contact") == "closed") && (evt.value == "unlocked") || (lock1.latestValue("lock") == "unlocked") && (evt.value == "closed"))
     {
 	//Door closed and unlocked, schedule delayed lock of door.
 	unschedule (alertOpenDoor)
 	if (autoLock != "No")
 	{
-        	log.debug "Scheduling lock of $lock1..."
+		log.debug "$lock1 door closed and unlocked, scheduling delayed lock. Using open sensor $contact1."
         	def delay = (minutesLater * 60)
         	runIn (delay, lockDoor)
     	}
     }
-    else if ((lock1.latestValue("lock") == "unlocked") && (evt.value == "open"))
-    {
-        unschedule (lockDoor)
-	if (sendOpenAlert != "No")
-	{
-	    	log.debug "Door left open, set timer to send a warning!"
-		def delay = (openMinutesLater * 60)
-		runIn (delay, alertOpenDoor)
-	}
-    }
-    else if ((lock1.latestValue("lock") == "unlocked") && (evt.value == "closed"))
-    {
-	unschedule (alertOpenDoor)
-	if (autoLock != "No")
-	{
-	        log.debug "Scheduling lock of $lock1..."
-	        def delay = (minutesLater * 60)
-	        runIn (delay, lockDoor)
-	}
-    }
-    else if ((lock1.latestValue("lock") == "locked") && (evt.value == "open"))
-    {
-        //lock1.unlock()
-        unschedule (lockDoor)
-    	if (sendOpenAlert != "No")
-	{
-		log.debug "Door left open and locked?, set timer to send a warning!"
-        	def delay = (openMinutesLater * 60)
-        	runIn (delay, alertOpenDoor)
-	}
-    }
-    else if ((lock1.latestValue("lock") == "locked") && (evt.value == "closed"))
-    {
-        log.debug "$lock1 closed and locked, do nothing..."
-        unschedule (lockDoor)
-        unschedule (alertDoorOpen)
-    	//lock1.unlock()
-    }
     else
     {
-        log.debug "Problem with $lock1, the lock might be jammed!"
+        log.debug "$lock1, problem reading status, the lock or door sensor might be malfunctioning, changing states or jammed!? Using open sensor $contact1."
+        //Send an alert if this happens?
         unschedule (lockDoor)
         unschedule (alertDoorOpen)
     }
