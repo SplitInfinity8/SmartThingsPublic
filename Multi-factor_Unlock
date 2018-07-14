@@ -1,0 +1,42 @@
+/**
+ *  Multi-factor Unlock
+ *
+ *  Copyright 2018 SplitInfinity
+ *
+ *  Built towards automatically unlocking a door on multiple factors for security, IE presence and open garage.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ * Icon List: http://scripts.3dgo.net/smartthings/icons/
+ */
+definition(
+    name: "Multi-factor Unlock",
+    namespace: "SplitInfinity8",
+    author: "SplitInfinity8",
+    description: "",
+    category: "My Apps",
+    iconUrl: "http://cdn.device-icons.smartthings.com/Transportation/transportation12-icn@2x.png",
+    iconX2Url: "http://cdn.device-icons.smartthings.com/Transportation/transportation12-icn@2x.png",
+    iconX3Url: "http://cdn.device-icons.smartthings.com/Transportation/transportation12-icn@2x.png")
+
+preferences {
+  section("When this presence sensor is home") {
+      input "openSensor", "capability.contactSensor", title: "Select Contact", required: true
+  }
+  section("AND this door opens") {
+      input "openSensor", "capability.contactSensor", title: "Select Contact", required: true
+  }
+  section("Unlock this door") {
+      input "doorLock", "capability.lock", title: "Select Lock", required: true
+	}
+  section("Check for both factors for up to this many minutes") {
+    	input "minutes", "decimal", title: "Minutes?", defaultValue: "1"
+  }
+}
