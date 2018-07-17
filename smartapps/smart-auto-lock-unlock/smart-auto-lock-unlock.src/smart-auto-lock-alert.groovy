@@ -33,12 +33,13 @@ preferences
     section("Automatically lock the door when closed...") {
         input "minutesLater", "number", title: "Delay (in minutes):", required: true
     }
-//   DISABLED - THIS IS A SECURITY VULNERABILITY IF THE SENSOR EVER MALFUNCTIONS!
-//    section("Automatically unlock the door when open...") {
-//        input "secondsLater", "number", title: "Delay (in seconds):", required: true
-//    }
     section("Send an alert if the door is left open too long...") {
         input "openMinutesLater", "number", title: "Delay (in minutes):", required: true
+    }
+    section("Use motion sensor to delay auto-lock or alerts?") {
+        input "motion1", "capability.motionSensor", required: false, title: "Select a motion sensor? (Optional)"
+        input "delayAutoLockMin", "number", title: "Motion delay Auto-Lock (in minutes):", required: false
+        input "delayOpenAlertMin", "number", title: "Motion delay Open Alert (in minutes):", required: false
     }
     section( "Push notification?" ) {
 		input "sendPushMessage", "enum", title: "Send push notification?", metadata:[values:["Yes", "No"]], required: false
@@ -68,6 +69,9 @@ def initialize()
     subscribe(lock1, "unlock", doorHandler, [filterEvents: false])  
     subscribe(contact1, "contact.open", doorHandler)
     subscribe(contact1, "contact.closed", doorHandler)
+//    subscribe(motion1, "motion.active", motionDetectedHandler)
+//motion1, delayAutoLockMin, delayOpenAlertMin
+
 }
 
 def lockDoor()
