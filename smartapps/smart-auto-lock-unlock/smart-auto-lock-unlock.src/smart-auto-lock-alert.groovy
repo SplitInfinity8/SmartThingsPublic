@@ -1,7 +1,7 @@
 /**
- *  Smart Lock / Alert Left Open
+ *  Smart Auto Lock and Alert Left Open
  *
- *  Copyright 2014 Arnaud
+ *  Copyright 2018 SplitInfinity
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -14,9 +14,9 @@
  *
  */
 definition(
-    name: "Smart Auto Lock - Alert Left Open",
+    name: "Smart Auto Lock and Alert Left Open",
     namespace: "smart-auto-lock-alert-open",
-    author: "Arnaud - modified by SplitInfinity8",
+    author: "SplitInfinity8, used Arnaud's app as rough starting template",
     description: "Automatically lock door X minutes after being closed, and alert X minutes after being left open.",
     category: "Safety & Security",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
@@ -24,7 +24,10 @@ definition(
 
 preferences
 {
-    section("Select the door lock:") {
+    section("Enable this Smart App:") {
+    	input "enableSA", "enum", title: "Enable this automation?", metadata:[values:["Enabled", "Disabled"]], required: true
+    }
+    section("Select the door to unlock:") {
         input "lock1", "capability.lock", required: true
     }
     section("Select the door contact sensor:") {
